@@ -5,8 +5,8 @@
   "contact": {
     "email": "tejalnarvekar68@gmail.com",
     "linkedin": "https://www.linkedin.com/in/tejal-narvekar-8657b0394/",
-    "mobile number": "(+91) 9307588100"
-    //"website": "https://your-site.com"
+    "mobile number": "(+91) 9307588100",
+    //"website": "https://your-site.com",
   },
   "summary": "Supply Chain and Demand Planning professional with 3.5 years of experience at o9 Solutions, working on demand planning and
 Integrated Business Planning (IBP) initiatives. Experienced in designing Constrained Revenue Plans (CRP), contributing to IBP
@@ -27,17 +27,17 @@ platform.",
 and Hospital Patient Monitoring (HPM).",
 "Engaged with clients and business stakeholders to understand requirements, clarify business needs and translate them into
 functional solution builds.",
-"Developed a Talent Management System (TMS) dashboard using the IBPL platform."
+"Developed a Talent Management System (TMS) dashboard using the IBPL platform.",
       ]
     }
   ],
   "education": [
-    { "school": "National Institute of Technology Karnataka (NITK)", "degree": "B.Tech, Civil Engineering", "year": "2023", "CGPA":"7.84", "minor_degree": "Electrical & Electronics Engineering", "minor_degree_CGPA": "7" }
+    { "school": "National Institute of Technology Karnataka (NITK)", "degree": "B.Tech, Civil Engineering", "year": "2023", "CGPA":"7.84", "minor_degree": "Electrical & Electronics Engineering", "minor_degree_CGPA": "7"}
   ],
   "projects": [
     { "name": "Supplier Risk Analyser — AI-Enabled Supplier Risk Assessment & Comparison Platform", 
     "description": "Supplier management: Create and maintain a centralized supplier register, retrieve supplier-specific information and access assessment history. Document intelligence: Process uploaded audit reports, annual reports and financial documents to extract information relevant to supplier evaluation. Financial and delivery risk: Analyse structured financial metrics from CSV files and shipment/delivery performance data to identify financial vulnerabilities and operational reliability issues. Risk scoring and comparison: Generate supplier risk scores and classifications using available evidence; compare two suppliers’ scores and supporting information to assess relative strengths, weaknesses and risk. Objective: Reduce manual assessment effort and provide procurement teams with a structured, evidence-based approach to supplier evaluation and selection. Technology: Python, FastAPI, LangGraph, SQLAlchemy, SQLite/PostgreSQL, Streamlit, PyMuPDF, structured CSV processing and Tavily (optional external research).", 
-    "link": "https://github.com/tejalnarvekar68-lab/Supplier_Risk_Analyser.git" }
+    "link": "https://github.com/tejalnarvekar68-lab/Supplier_Risk_Analyser.git"}
   ],
   "certifications": [],
   "availability": "Open to remote roles. Notice period: 30 days.",

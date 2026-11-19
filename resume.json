@@ -6,9 +6,16 @@
     "email": "tejalnarvekar68@gmail.com",
     "linkedin": "https://www.linkedin.com/in/tejal-narvekar-8657b0394/",
     "phone": "(+91) 9307588100"
-    },
-  "summary": "Supply Chain and Demand Planning professional with 3.5 years of experience at o9 Solutions, working on demand planning and \n Integrated Business Planning (IBP) initiatives. Experienced in designing Constrained Revenue Plans (CRP), contributing to IBP \n processes, and translating business requirements into solution builds. Client-facing experience includes understanding stakeholder \n needs, clarifying requirements and shaping functional solutions. Currently building AI-enabled applications using retrieval-augmented \n generation and agent-orchestration technologies.",
-  "skills": ["Integrated Business Planning Language (IBPL)", "RAG", "LangChain & LangGraph", "Agentic Development", "Python", "NLP"],
+  },
+  "summary": "Supply Chain and Demand Planning professional with 3.5 years of experience at o9 Solutions, working on demand planning and Integrated Business Planning (IBP) initiatives. Experienced in designing Constrained Revenue Plans (CRP), contributing to IBP processes, and translating business requirements into solution builds. Client-facing experience includes understanding stakeholder needs, clarifying requirements and shaping functional solutions. Currently building AI-enabled applications using retrieval-augmented generation and agent-orchestration technologies.",
+  "skills": [
+    "Integrated Business Planning Language (IBPL)",
+    "RAG",
+    "LangChain & LangGraph",
+    "Agentic Development",
+    "Python",
+    "NLP"
+  ],
   "experience": [
     {
       "company": "o9 Solutions, Inc.",
@@ -24,17 +31,125 @@
     }
   ],
   "education": [
-    {"school": "National Institute of Technology Karnataka (NITK)", 
-    "degree": "B.Tech, Civil Engineering", 
-    "year": "2023", 
-    "CGPA":"7.84", 
-    "minor_degree": "Electrical & Electronics Engineering", 
-    "minor_degree_CGPA": "7"}
+    {
+      "school": "National Institute of Technology Karnataka (NITK)",
+      "degree": "B.Tech, Civil Engineering",
+      "year": "2023",
+      "CGPA": "7.84",
+      "minor_degree": "Electrical & Electronics Engineering",
+      "minor_degree_CGPA": "7"
+    }
   ],
   "projects": [
-    {"name": "Supplier Risk Analyser — AI-Enabled Supplier Risk Assessment & Comparison Platform", 
-    "description": "Supplier management: Create and maintain a centralized supplier register, retrieve specific information and access assessment history. Document intelligence: Process uploaded audit reports, annual reports and financial documents to extract information relevant to supplier evaluation. Financial and delivery risk: Analyse structured financial metrics from CSV files and shipment/delivery performance data to identify financial vulnerabilities and operational reliability issues. Risk scoring and comparison: Generate supplier risk scores and classifications using available evidence; compare two suppliers’ scores and supporting information to assess relative strengths, weaknesses and risk. Objective: Reduce manual assessment effort and provide procurement teams with a structured, evidence-based approach to supplier evaluation and selection. Technology: Python, FastAPI, LangGraph, SQLAlchemy, SQLite/PostgreSQL, Streamlit, PyMuPDF, structured CSV processing and Tavily (optional external research).", 
-    "link": "https://github.com/tejalnarvekar68-lab/Supplier_Risk_Analyser.git"}
+    {
+      "name": "Supplier Risk Analyser — AI-Enabled Supplier Risk Assessment & Comparison Platform",
+      "description": "Supplier management: Create and maintain a centralized supplier register, retrieve specific information and access assessment history. Document intelligence: Process uploaded audit reports, annual reports and financial documents to extract information relevant to supplier evaluation. Financial and delivery risk: Analyse structured financial metrics from CSV files and shipment/delivery performance data to identify financial vulnerabilities and operational reliability issues. Risk scoring and comparison: Generate supplier risk scores and classifications using available evidence; compare two suppliers’ scores and supporting information to assess relative strengths, weaknesses and risk. Objective: Reduce manual assessment effort and provide procurement teams with a structured, evidence-based approach to supplier evaluation and selection. Technology: Python, FastAPI, LangGraph, SQLAlchemy, SQLite/PostgreSQL, Streamlit, PyMuPDF, structured CSV processing and Tavily (optional external research).",
+      "link": "https://github.com/tejalnarvekar68-lab/Supplier_Risk_Analyser.git",
+      "technical_details": {
+        "overview": "Technical deep-dive of the Supplier Risk Analyser: Streamlit UI -> FastAPI API -> SQLAlchemy storage -> LangGraph workflow -> deterministic risk scoring, plus a two-supplier comparison RAG. LLMs are used in only two places: financial fact extraction (gpt-4o-mini via OpenRouter) and the two-supplier comparison. Risk scores are never LLM-generated; they come from fixed thresholds in code.",
+        "end_to_end_flow": "Upload document -> chunk financial content -> store -> on assessment, retrieve and extract facts -> compute ratios -> score -> persist.",
+        "architecture": {
+          "ui": "app.py: Streamlit; calls the API with requests and an X-API-Key header.",
+          "api": "main.py: FastAPI; Pydantic schemas; API-key dependency on every route.",
+          "storage": "models.py: SQLAlchemy 2.0 on SQLite (configurable via database_url); 4 tables.",
+          "workflow": "graph.py: LangGraph with 7 nodes; financial_evidence.py does the retrieval.",
+          "scoring_and_rag": "risk_engine.py: pure scoring functions; RAG_chain.py: LangChain + Qdrant for supplier comparison."
+        },
+        "data_model_config_security": {
+          "tables": {
+            "suppliers": "id, name, country, category, website. Cascade delete-orphan to the 3 child tables.",
+            "evidence_documents": "supplier_id, filename, sha256, extracted_text. extracted_text holds JSON chunks (schema_version 2).",
+            "structured_records": "kind (financial or shipment), filename, data (JSON). The last CSV row is the one scored.",
+            "assessments": "risk_score, risk_band, coverage_pct, result (JSON). Full result stored; history returned newest first."
+          },
+          "config": "config.py: pydantic-settings reads .env (unknown keys ignored); upload cap 15 MB.",
+          "security": "security.py: secrets.compare_digest on X-API-Key; 503 if the key is still the placeholder secret, 401 if wrong.",
+          "database": "database.py: engine plus a get_db() generator dependency (session closed after each request)."
+        },
+        "api_routes": {
+          "POST /suppliers": "Create supplier (validated by SupplierCreate).",
+          "GET /suppliers and /suppliers/{id}": "List (ordered by name) or fetch one; 404 if missing.",
+          "POST /suppliers/{id}/documents": "Upload PDF etc.; chunk and store; duplicates detected by SHA-256.",
+          "POST /suppliers/{id}/data?kind=": "Upload CSV (financial or shipment); stores the last row.",
+          "POST /assessments": "Runs the LangGraph workflow and returns the result plus assessment id.",
+          "GET /suppliers/{id}/assessments": "Assessment history, newest first.",
+          "GET /assessments/{id}": "One stored assessment.",
+          "GET /suppliers/{a}/{b}/RAG": "LLM comparison of two suppliers.",
+          "GET /health and /ready": "Liveness; readiness runs SELECT 1 (503 if the database is down)."
+        },
+        "upload_pipeline": [
+          "Size guard: reads max 15 MB + 1 byte; larger files return 413. Filename reduced to its basename.",
+          "_extract_pages: PyMuPDF page text plus pdfplumber tables (kept only if 2+ non-empty rows). Also supports DOCX, XLSX/XLS, CSV, TXT, MD.",
+          "Page filter: keep a page only if the FINANCIAL_TERMS regex matches or it has tables.",
+          "_split_paragraphs: split on blank lines, merge up to 2,200 characters, hard-cut anything longer.",
+          "Chunk filter: narrative chunks must match the regex; tables become TABLE text rows 'a | b | c'.",
+          "Store: JSON in extracted_text; the same SHA-256 for the same supplier returns the existing id."
+        ],
+        "stored_chunk_fields": {
+          "id": "First 10 hex characters of the file SHA, page and index, e.g. a1b2c3d4e5-p12-t0 (stable provenance).",
+          "text": "Paragraph block (up to 2,200 chars) or 'TABLE' plus pipe-separated rows.",
+          "company": "Supplier name; retrieval filters on exact case-insensitive match.",
+          "financial_year": "Always null today (upload never passes fiscal_year).",
+          "section": "First SECTION_TERMS hit in the page's first 1,800 characters, else 'inferred'.",
+          "page_and_content_type": "Page number; narrative or financial_table.",
+          "document_and_hash": "Source file name and full SHA-256."
+        },
+        "chunk_storage_format": "Saved as {schema_version: 2, financial_chunks: [...]}. graph.prepare() json-loads it and fills missing company, document and document_id with setdefault.",
+        "hybrid_retrieval": {
+          "step_1_filter": "Only chunks whose company matches; optional fiscal-year filter.",
+          "step_2_dense": "all-MiniLM-L6-v2 embeddings, normalised; score is the matrix dot product.",
+          "step_3_sparse": "BM25Okapi over lowercase [a-z0-9]+ tokens.",
+          "step_4_fuse_and_rerank": "Reciprocal Rank Fusion = sum of 1/(60+rank) over dense top-20 and BM25 top-20. The best 20 fused candidates go to the cross-encoder ms-marco-MiniLM-L-6-v2, which scores (query, chunk) pairs; the top 5 are returned.",
+          "queries": "analyse() runs 4 queries (liquidity, leverage, cash flow, profit) and merges by chunk id, so at most 20 chunks reach the LLM.",
+          "caching": "The index is built in memory and cached by a SHA-256 fingerprint of the chunk list (max 8 cached)."
+        },
+        "fact_extraction_and_ratios": {
+          "llm_step": "extract_financial_facts: gpt-4o-mini via OpenRouter, temperature 0, JSON mode. Evidence is labelled [SOURCE n] with document, page and section. Asks for 6 metrics plus 2 reported ratios, each with value, unit, period and source. The LLM is told not to infer or calculate, and to omit what is absent.",
+          "code_step": "calculate_financial_row: operating cash flow and net income are copied as stated. A reported ratio wins; debt_to_assets given in % is divided by 100. Otherwise a ratio is computed only if both numbers exist, share the same period and unit, and the denominator is greater than 0. A provenance dict records every input.",
+          "precedence": "In analyse(), values from an uploaded financial CSV override document-derived values."
+        },
+        "scoring_rules": {
+          "note": "Higher score means riskier.",
+          "current_ratio": ">= 1.5 scores 20; >= 1.0 scores 45; below 1.0 scores 80.",
+          "debt_to_assets": "<= 0.30 scores 20; <= 0.60 scores 45; above scores 80.",
+          "operating_cash_flow": ">= 0 scores 25; negative scores 85.",
+          "net_income": ">= 0 scores 25; negative scores 75.",
+          "financial_score": "Mean of the available metric scores.",
+          "delivery_score": "Uses on-time, first-attempt-success, failed and damaged shipment rates against shipments_total.",
+          "overall_score": "Weighted mean: financial 40%, delivery 40%, evidence review 20%, renormalised over the domains that have data.",
+          "bands": "Below 25 Low; below 50 Moderate; below 75 High; otherwise Critical.",
+          "coverage": "Coverage = available domains / 3. Missing data is never treated as low risk."
+        },
+        "langgraph_workflow": {
+          "description": "Linear graph of 7 nodes sharing a TypedDict state; each node returns a partial dict that LangGraph merges. run_assessment() invokes the compiled graph.",
+          "nodes": {
+            "prepare": "Load supplier, parse stored chunks, split CSV records by kind.",
+            "research": "Optional Tavily search (returns [] unless enabled and keyed).",
+            "analyse": "Retrieve, extract facts, calculate ratios, merge with CSV, score finance and delivery.",
+            "evidence_review": "Placeholder: always score None, available False.",
+            "score": "assess_risk: weights, band, coverage.",
+            "validate": "Check score is 0 to 100; attach supplier, evidence and analyses.",
+            "persist": "Insert the Assessment row; stores 0 if the score is None."
+          }
+        },
+        "comparison_rag": [
+          "The endpoint gathers each supplier's chunk JSON, CSV rows and the mean of all past assessment scores.",
+          "RAG_chain.py: Documents -> RecursiveCharacterTextSplitter (500 chars, 50 overlap) -> OpenAIEmbeddings -> local Qdrant collection supplier_comparison_{a}_{b} (cosine).",
+          "uuid5 IDs from metadata + text + index avoid duplicate inserts on repeat calls. The retriever returns k = 6.",
+          "LCEL chain: itemgetter -> retriever -> format_docs -> prompt -> ChatOpenAI (OpenRouter) -> StrOutputParser.",
+          "Prompt: act as a procurement analyst; 50% weight to scores, 50% to evidence; never invent data; five required output sections."
+        ],
+        "known_limitations": [
+          "Scanned PDFs have no OCR step, so no chunks are produced.",
+          "financial_year is never set, so the year filter is inactive and several years can mix.",
+          "Table text can appear twice (inside a narrative chunk and as its own table chunk).",
+          "evidence_review is a stub, so coverage tops out at 66.7%.",
+          "Comparison endpoint: adding a list to an empty string raises TypeError when one supplier lacks CSV data; the RAG ingests raw chunk JSON; scores average all history.",
+          "persist stores 0 for 'no score', so history cannot tell zero risk from no data.",
+          "Operations: create_all instead of migrations, SQLite, retriever cache per worker process."
+        ]
+      }
+    }
   ],
   "certifications": [],
   "availability": "Open to remote roles. Notice period: 30 days.",
@@ -42,6 +157,8 @@
     "What are your strongest skills?",
     "Summarise your experience in 3 lines",
     "What projects have you built?",
-    "How can I contact you?"
+    "How can I contact you?",
+    "How does your Supplier Risk Analyser retrieve and score documents?",
+    "What are the limitations of your Supplier Risk Analyser?"
   ]
 }
